@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>palz.one</title>
+<style>
+body {
+	
+	font-family: 'Baloo Thambi 2', cursive;
+	overflow: hidden; /* Hide scrollbars */
+	text-align: center;
+	-webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+html {
+    height: 100%;
+	overflow: hidden; /* Hide scrollbars */
+	background-color: black;
+    background-image:url("mountain.jpg");
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+}
+.mydiv {
+  position: absolute;
+  text-align: center;
+  border: 1px solid #d3d3d3;
+}
+
+.mydivheader {
+  padding: 10px;
+  cursor: move;
+  z-index: 10;
+  background-color: #333;
+  background: rgba(0, 0, 0, 0.5); 
+  color: #fff;
+}
+
+iframe {
+	resize: both;
+	min-width: 100px;
+	min-height: 100px;
+	background: #ffffff;
+	display:block;
+}
+
+#stitlecontainer {
+	left: 50%;
+	position: absolute;
+	color:#fff;
+}
+
+#stitle {
+	position: relative; 
+	left: -50%;
+}
+
+#susers {
+	position: absolute;
+	left: 8px;
+	bottom: 8px;
+	color: #fff;
+}
+
+</style>
+
+<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+<link rel="icon" href="/favicon.ico" type="image/x-icon">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script src="./iframetracker.js"></script>
+<script src="https://kit.fontawesome.com/1573ee10a5.js" crossorigin="anonymous"></script>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+Thambi+2&display=swap" rel="stylesheet">
+
+</head>
+<body>
+
+<div style="position: absolute; left: 10px; top: 10px">
+<input list="zones" name="zones-choice" style="font-size: 20pt;background-color: #333;background: rgba(0, 0, 0, 0.5);color: #fff;font-family: 'Baloo Thambi 2', cursive;" placeholder="Search.." />
+
+<datalist id="zones">
+</datalist>
+<i id="clearSearchBtn" class="fas fa-eraser" style="font-size:20pt;color:white;cursor:pointer;margin-right:0.1em;opacity: 0.5;" onclick="clearSearch()"></i>
+<i id="addWindowBtn" class="far fa-plus-square" style="font-size:20pt;color:white;cursor:pointer;opacity: 0.5;" onclick="addWindow()"></i>
+</div>
+<div style="position: absolute; right: 10px; top: 10px">
+<i id="showWindowsBtn" class="fas fas fa-eye" style="font-size:20pt;color:white;cursor:pointer;margin-right:0.1em" onclick="showWindows()"></i>
+<i id="hideWindowsBtn" class="fas fa-eye-slash" style="font-size:20pt;color:white;cursor:pointer;margin-right:0.1em" onclick="hideWindows()"></i>
+<i id="dockBtn" class="fas fa-border-all" style="font-size:20pt;color:white;cursor:pointer;margin-right:0.1em" onclick="dockWindows()"></i>
+<i id="fullscreenBtn" class="fas fa-compress" style="font-size:20pt;color:white;cursor:pointer;margin-right:0.1em" onclick="toggleFullscreen()"></i>
+<i id="helpBtn" class="fas fa-question-circle" style="font-size:20pt;color:white;cursor:pointer;" onclick="help()"></i>
+</div>
+
+<div id="stitlecontainer" style="position: absolute; left: 50%;">
+<div id="stitle"><span id="todaysDate"></span><br/><span id="todaysWeather"></span></div>
+</div>
+<div id="susers"></div>
+
+<script>
+
+var zIndex = 10;
+var wIndex = 1;
+var windowTitle = "";
+var windowUrl = "";
+
+var ticker1 = 60;
+var ticker10 = 600;
+var ticker30 = 1800;
+
+var fullscreen = false;
+
+var zoneTitles = [];
+
+var zoneUrls = [];
+
+var body = document.body,
+    html = document.documentElement;
+	
+recalculateSWH();
+
+var windows = [];
+var dirty = false;
+var loaded = false;
+
+function showWindows() {
+	windows.forEach(function(currentValue, index, array){
+		if (currentValue) {
+			$("#mydiv" + currentValue.id).show();
+		}
+	});
+}
+
+function hideWindows() {
+	windows.forEach(function(currentValue, index, array){
+		if (currentValue) {
+			$("#mydiv" + currentValue.id).hide();
+		}
+	});
+}
+
+function dockWindows() {
+	var cnt = Object.keys(windows).length;
+	var i = 1;
+	windows.forEach(function(currentValue, index, array){
+		if (currentValue) {
+		
+			if (cnt === 1) {
+				$("#mydiv" + currentValue.id).css({left: 0});
+				$("#mydiv" + currentValue.id).css({top: 67});
+				$("#iframe" + currentValue.id).width(swidth);
+				$("#iframe" + currentValue.id).height(sheight-114);
+			}
+			else if (cnt === 2) {
+				if (i === 1) {
+					$("#mydiv" + currentValue.id).css({left: 0});
+					$("#mydiv" + currentValue.id).css({top: 67});
+					$("#iframe" + currentValue.id).width(swidth/2);
+					$("#iframe" + currentValue.id).height(sheight-114);
+				}
+				else if (i === 2) {
+					$("#mydiv" + currentValue.id).css({left: swidth/2});
+					$("#mydiv" + currentValue.id).css({top: 67});
+					$("#iframe" + currentValue.id).width(swidth/2);
+					$("#iframe" + currentValue.id).height(sheight-114);
+				}
+			}
+			else if (cnt === 3) {
+				if (i === 1) {
+					$("#mydiv" + currentValue.id).css({left: 0});
+					$("#mydiv" + currentValue.id).css({top: 67});
+					$("#iframe" + currentValue.id).width(swidth/3);
+					$("#iframe" + currentValue.id).height(sheight-114);
+				}
+				else if (i === 2) {
+					$("#mydiv" + currentValue.id).css({left: swidth/3});
+					$("#mydiv" + currentValue.id).css({top: 67});
+					$("#iframe" + currentValue.id).width(swidth/3);
+					$("#iframe" + currentValue.id).height(sheight-114);
+				}
+				else if (i === 3) {
+					$("#mydiv" + currentValue.id).css({left: 2*swidth/3});
+					$("#mydiv" + currentValue.id).css({top: 67});
+					$("#iframe" + currentValue.id).width(swidth/3);
+					$("#iframe" + currentValue.id).height(sheight-114);
+				}
+			}
+			else if (cnt >= 4) {
+				var perRow = Math.ceil(cnt/2);
+				if (i <= perRow) {
+					$("#mydiv" + currentValue.id).css({left: (i-1)*swidth/perRow});
+					$("#mydiv" + currentValue.id).css({top: 67});
+					$("#iframe" + currentValue.id).width(swidth/perRow);
+					$("#iframe" + currentValue.id).height((sheight-114)/2-24);
+				}
+				else {
+					$("#mydiv" + currentValue.id).css({left: (i-perRow-1)*swidth/perRow});
+					$("#mydiv" + currentValue.id).css({top: 67 + (sheight-114)/2 + 23});
+					$("#iframe" + currentValue.id).width(swidth/perRow);
+					$("#iframe" + currentValue.id).height((sheight-114)/2-23);
+				}
+			}
+			i++;
+		}
+	});
+	dirty = true;
+}
+
+function save() {
+	if (loaded) {
+		windows.forEach(function(currentValue, index, array){
+			if (currentValue) {
+				currentValue.x = $("#mydiv" + currentValue.id)[0].style.left;
+				currentValue.y = $("#mydiv" + currentValue.id)[0].style.top;
+				currentValue.w = $("#iframe" + currentValue.id).width();
+				currentValue.h = $("#iframe" + currentValue.id).height();
+				currentValue.z = $("#mydiv" + currentValue.id)[0].style.zIndex;
+				if (parseInt($("#mydiv" + currentValue.id)[0].style.zIndex) >= 16777271) {
+					currentValue.z = 10;
+				}
+			}
+		});
+	
+		localStorage.setItem("windows", JSON.stringify(windows));
+	}
+}
+
+function load() {
+	if (localStorage.getItem("windows") === null) {
+		loaded = true;
+	}
+	else {
+		var windowsTmp = JSON.parse(localStorage.getItem("windows"));
+		windowsTmp.forEach(function(currentValue, index, array){
+			if (currentValue) {
+			
+				for (var i = 0; i < zoneTitles.length; i++) {
+					if (currentValue.title === zoneTitles[i]) {
+						windowUrl = zoneUrls[i];
+						windowTitle = zoneTitles[i];
+						break;
+					}
+				}
+
+				addWindow();
+				$("#mydiv" + windows[wIndex-1].id).css({left: currentValue.x});
+				$("#mydiv" + windows[wIndex-1].id).css({top: currentValue.y});
+				$("#mydiv" + windows[wIndex-1].id).css({zIndex: currentValue.z});
+				$("#iframe" + windows[wIndex-1].id).width(currentValue.w);
+				$("#iframe" + windows[wIndex-1].id).height(currentValue.h);
+				windows[wIndex-1].r = currentValue.r;
+				if (currentValue.r === 1) {
+					$("#wrefresh" + windows[wIndex-1].id).css("color", "#99ff99");
+				}
+				
+				if (parseInt(currentValue.z) > zIndex) {
+					zIndex = parseInt(currentValue.z) + 1;
+				}
+			}
+		});
+		loaded = true;
+	}
+}
+
+function recalculateSWH() {
+	sheight = html.offsetHeight;  
+	swidth = html.offsetWidth;
+	if (swidth <= 1200) {
+		$("#stitlecontainer").css({top: ""});
+		$("#stitlecontainer").css({bottom: "8px"});
+	}
+	else {
+		$("#stitlecontainer").css({top: "8px"});
+		$("#stitlecontainer").css({bottom: ""});
+	}
+}
+
+window.onresize = function(event) {
+    recalculateSWH();
+	
+};
+
+function toggleFullscreen() {
+	var elem = document.documentElement;
+	if (fullscreen) {
+		if (document.exitFullscreen) {
+		document.exitFullscreen();
+	  } else if (document.mozCancelFullScreen) { /* Firefox */
+		document.mozCancelFullScreen();
+	  } else if (document.webkitExitFullscreen) { /* Chrome, Safari and Opera */
+		document.webkitExitFullscreen();
+	  } else if (document.msExitFullscreen) { /* IE/Edge */
+		document.msExitFullscreen();
+	  }
+	}
+	else {
+		if (elem.requestFullscreen) {
+			elem.requestFullscreen();
+		  } else if (elem.mozRequestFullScreen) { /* Firefox */
+			elem.mozRequestFullScreen();
+		  } else if (elem.webkitRequestFullscreen) { /* Chrome, Safari and Opera */
+			elem.webkitRequestFullscreen();
+		  } else if (elem.msRequestFullscreen) { /* IE/Edge */
+			elem.msRequestFullscreen();
+		  }
+	}
+	fullscreen = !fullscreen;
+	recalculateSWH();
+}
+
+function clearSearch() {
+	windowUrl = "";
+	$("input[name='zones-choice']").val("");
+	$("#clearSearchBtn").css('opacity', '0.5');
+	$("#addWindowBtn").css('opacity', '0.5');
+}
+
+function wleft(i) {
+	recalculateSWH();
+	$("#mydiv" + i).css({left: 2});
+	dirty = true;
+}
+
+function wright(i) {
+	recalculateSWH();
+	$("#mydiv" + i).css({left: (swidth - $("#iframe" + i).width())});
+	dirty = true;
+}
+
+function wup(i) {
+	recalculateSWH();
+	$("#mydiv" + i).css({top: 67});
+	dirty = true;
+}
+
+function wdown(i) {
+	recalculateSWH();
+	$("#mydiv" + i).css({top: (sheight - $("#iframe" + i).height()) - 47});
+	dirty = true;
+}
+
+function wincrease(i) {
+	$("#iframe" + i).width(parseInt($("#iframe" + i).width()) + 64);
+	$("#iframe" + i).height(parseInt($("#iframe" + i).height()) + 48);
+	dirty = true;
+}
+
+function wdecrease(i) {
+	$("#iframe" + i).width(parseInt($("#iframe" + i).width()) - 64);
+	$("#iframe" + i).height(parseInt($("#iframe" + i).height()) - 48);
+	dirty = true;
+}
+
+function help() {
+	windowUrl = "https://www.palz.one/help.html";
+	windowTitle = "Help";
+	addWindow();
+	searchChanged($("input[name='zones-choice']").val());
+}
+
+function wrefresh(i) {
+	if (windows[i].r === 1) {
+		$("#wrefresh" + i).css("color", "#ffffff");
+		windows[i].r = 0;
+	}
+	else {
+		$("#wrefresh" + i).css("color", "#99ff99");
+		windows[i].r = 1;
+	}
+	dirty = true;
+}
+
+function refreshWindows() {
+	windows.forEach(function(currentValue, index, array){
+		if (currentValue) {
+			if (currentValue.r === 1) {
+				$( '#iframe' + currentValue.id ).attr( 'src', function ( i, val ) { return val; });
+			}
+		}
+	});
+}
+
+function addWindow() {
+
+	if ($("input[name='zones-choice']").val().toLowerCase() === "admin") {
+		windowUrl = "./admin.html";
+		windowTitle = "Admin";
+	}
+
+	if (windowUrl.length > 0) {
+	
+		var arrows = '<div style="float:left"><i style="margin-right:0.1em;cursor:pointer;" class="fas fa-caret-square-left" onclick="wleft(' + wIndex + ')"></i><i style="margin-right:0.1em;cursor:pointer;" class="fas fa-caret-square-up" onclick="wup(' + wIndex + ')"></i><i style="margin-right:0.1em;cursor:pointer;" class="fas fa-caret-square-right" onclick="wright(' + wIndex + ')"></i><i style="margin-right:0.1em;cursor:pointer;" class="fas fa-caret-square-down" onclick="wdown(' + wIndex + ')"></i><i style="margin-right:0.1em;cursor:pointer;" class="fas fa-plus-square" onclick="wincrease(' + wIndex + ')"></i><i style="margin-right:0.1em;cursor:pointer;" class="fas fa-minus-square" onclick="wdecrease(' + wIndex + ')"></i><i id="wrefresh' + wIndex + '" style="margin-left:0.5em;cursor:pointer;" class="fas fa-sync" onclick="wrefresh(' + wIndex + ')"></i></div>';
+		
+		var headerstr = arrows + windowTitle + '<i class="fas fa-window-close" style="color: #ff9999; float: right; cursor:pointer;" onclick="closeWindow(' + wIndex + ')"></i>';
+		
+		$("body").append( '<div class="mydiv" id="mydiv' + wIndex + '" style="top: 67px;"><div class="mydivheader" id="mydiv' + wIndex + 'header">' + headerstr + '</div><iframe id="iframe'+ wIndex + '" sandbox="allow-top-navigation-by-user-activation allow-same-origin allow-scripts allow-forms" width="800" height="600" frameBorder="0" src="' + windowUrl + '"></iframe></div>' );
+		dragElement(document.getElementById("mydiv" + wIndex));
+		document.getElementById("mydiv" + wIndex).style.zIndex = zIndex++;
+		
+		$( "#iframe" + wIndex ).iframeTracker({
+			blurCallback: function(event) {
+				document.getElementById(this._overId).style.zIndex = zIndex++;
+				dirty = true;
+			},
+			overCallback: function(element, event) {
+				this._overId = $(element).parents('.mydiv').attr('id'); // Saving the iframe wrapper id
+			},
+			outCallback: function(element, event) {
+				this._overId = null; // Reset hover iframe wrapper id
+			},
+			_overId: null
+		});
+		
+		windows[wIndex] = { title: windowTitle, id: wIndex, x: 0, y: 0, w: 0, h: 0, z: 0, r: 0 };
+		wIndex++;
+		
+		dirty = true;
+	}
+}
+
+function closeWindow(i) {
+	$( "#mydiv" + i ).remove();
+	delete windows[i];
+}
+
+function dragElement(elmnt) {
+  var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+  if (document.getElementById(elmnt.id + "header")) {
+    /* if present, the header is where you move the DIV from:*/
+    document.getElementById(elmnt.id + "header").onmousedown = dragMouseDown;
+  } else {
+    /* otherwise, move the DIV from anywhere inside the DIV:*/
+    elmnt.onmousedown = dragMouseDown;
+  }
+
+  function dragMouseDown(e) {
+	elmnt.style.zIndex = zIndex++;
+    e = e || window.event;
+    e.preventDefault();
+    // get the mouse cursor position at startup:
+    pos3 = e.clientX;
+    pos4 = e.clientY;
+    document.onmouseup = closeDragElement;
+    // call a function whenever the cursor moves:
+    document.onmousemove = elementDrag;
+	dirty = true;
+  }
+
+  function elementDrag(e) {
+    e = e || window.event;
+    e.preventDefault();
+    // calculate the new cursor position:
+    pos1 = pos3 - e.clientX;
+    pos2 = pos4 - e.clientY;
+    pos3 = e.clientX;
+    pos4 = e.clientY;
+    // set the element's new position:
+    elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+    elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+	dirty = true;
+  }
+
+  function closeDragElement() {
+    /* stop moving when mouse button is released:*/
+    document.onmouseup = null;
+    document.onmousemove = null;
+	dirty = true;
+  }
+}
+
+var days = new Array("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday");
+var months = new Array("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December");
+
+function tick()
+{
+	if (dirty) {
+		dirty = false;
+		save();
+	}
+	
+	if (ticker1++ > 60) {
+		var now = new Date();
+	
+		var hours = now.getHours();
+		if (hours < 10) {
+			hours = "0" + hours;
+		}
+		
+		var minutes = now.getMinutes();
+		if (minutes < 10) {
+			minutes = "0" + minutes;
+		}
+
+		document.getElementById("todaysDate").innerHTML = hours +":" + minutes + " " + days[now.getDay()] + ", " + now.getDate() + " " + months[now.getMonth()] + " " + now.getFullYear();
+		ticker1 = 0;
+	}
+	
+	if (ticker10++ > 600) {
+		refreshWindows();
+		ticker10 = 0;
+	}
+	
+	if (ticker30++ > 1800) {
+		getWeather();
+		ticker30 = 0;
+	}
+}
+
+function getBrowser() {
+	zoneTitles.push("Browser");
+	zoneUrls.push("./browser.html");
+	$('#zones').append("<option value='Browser'>");
+}
+
+function getHelp() {
+	zoneTitles.push("Help");
+	zoneUrls.push("./help.html");
+	$('#zones').append("<option value='Help'>");
+}
+
+function convertKelvinToCelsius(kelvin) {
+	if (kelvin < (0)) {
+		return 'below absolute zero (0 K)';
+	} else {
+		return parseInt(kelvin-273.15) + "&deg;";
+	}
+}
+
+function getWeather() {
+
+    var requestData = 'getIp=1';
+
+    $.ajax({
+        url: "server.php",
+        type: "post",
+        data: requestData,
+        dataType: "json",
+        success: function(ip, status, http) {
+		
+			$("#susers").text("Users online: " + ip[1]);
+
+			$.ajax({
+				url: "https://ipapi.co/" + ip[0] + "/json/",
+				type: "get",
+				dataType: "json",
+				success: function(location, status, http) {
+
+					$.ajax({
+						url: "https://api.openweathermap.org/data/2.5/weather?q=" + location.city + "&appid=12f413e16c71d2d3e1ff0dfa1d7f21df",
+						type: "get",
+						dataType: "json",
+						success: function(weather, status, http) {
+							console.log(weather);
+							document.getElementById("todaysWeather").innerHTML = convertKelvinToCelsius(weather.main.temp) + ' ' + weather.weather[0].main + ' (' + weather.name + ')';
+						},
+						error: function(http, status, error) {
+							console.error(error);
+						}
+					});
+					
+					
+					
+				},
+				error: function(http, status, error) {
+					console.error(error);
+				}
+			});
+			
+			
+		},
+        error: function(http, status, error) {
+            console.error(error);
+        }
+	});
+}
+
+function getZones() {
+	
+    var requestData = 'getZones=1';
+
+    $.ajax({
+        url: "server.php",
+        type: "post",
+        data: requestData,
+        dataType: "json",
+        success: function(response, status, http) {
+			$.each( response, function( key, value ) {
+				zoneTitles.push(value.title);
+				zoneUrls.push(value.url);
+				$('#zones').append("<option value='" + value.title + "'>");
+			});
+			
+			load();
+		},
+        error: function(http, status, error) {
+            console.error(error);
+			load();
+        }
+	});
+}
+
+function searchChanged(selected) {
+	windowUrl = "";
+	$("#addWindowBtn").css('opacity', '0.5');
+	for (var i = 0; i < zoneTitles.length; i++) {
+		if (selected === zoneTitles[i]) {
+			windowUrl = zoneUrls[i];
+			windowTitle = zoneTitles[i];
+			$("#addWindowBtn").css('opacity', '1.0');
+			break;
+		}
+	}
+	if (selected.length > 0) {
+		$("#clearSearchBtn").css('opacity', '1.0');
+	}
+	else {
+		$("#clearSearchBtn").css('opacity', '0.5');
+	}
+}
+
+$("input[name='zones-choice']").on('input', function(e){
+	searchChanged($(this).val());
+});
+
+$.fn.enterKey = function (fnc) {
+    return this.each(function () {
+        $(this).keypress(function (ev) {
+            var keycode = (ev.keyCode ? ev.keyCode : ev.which);
+            if (keycode == '13') {
+                fnc.call(this, ev);
+            }
+        })
+    })
+}
+
+$("input[name='zones-choice']").enterKey(function () {
+    addWindow();
+});
+
+setInterval(tick, 1000);
+getBrowser();
+getZones();
+getHelp();
+
+</script>
+
+</body>
+</html>
+

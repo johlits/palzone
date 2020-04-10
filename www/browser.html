@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Browser</title>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+</head>
+<body style="font-size: 20pt; font-family: Arial, Helvetica, sans-serif; background-color: #eee">
+
+URL: <input type="text" id="inputURL" name="inputURL" style="font-size: 20pt" size="40" value="https://" placeholder="https://">
+<input type="button" value="Go" OnClick="buttonClick()" style="font-size: 20pt"/>
+<script language="javascript" type="text/javascript">
+    function buttonClick(){
+    var url = document.getElementById("inputURL").value;
+    window.location = url;
+    }
+	
+	$.fn.enterKey = function (fnc) {
+    return this.each(function () {
+        $(this).keypress(function (ev) {
+            var keycode = (ev.keyCode ? ev.keyCode : ev.which);
+            if (keycode == '13') {
+                fnc.call(this, ev);
+            }
+        })
+    })
+}
+
+$("#inputURL").enterKey(function () {
+    buttonClick();
+});
+</script>
+
+</body>
+
+</html>

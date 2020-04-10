@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Admin</title>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+</head>
+<body style="font-size: 20pt; font-family: Arial, Helvetica, sans-serif; background-color: #eee">
+
+<input type="text" id="inputTitle" name="inputTitle" style="font-size: 20pt" size="40" value="" placeholder="Title"><br/>
+<input type="text" id="inputURL" name="inputURL" style="font-size: 20pt" size="40" value="https://" placeholder="URL"><br/>
+<input type="password" id="inputPW" name="inputPW" style="font-size: 20pt" size="40" value="" placeholder="Password"><br/>
+<input type="button" value="Insert" OnClick="buttonClick()" style="font-size: 20pt"/>
+<input type="button" value="Delete (Where title matches)" OnClick="buttonDeleteClick()" style="font-size: 20pt"/>
+<script language="javascript" type="text/javascript">
+    function buttonClick(){
+	
+		$("#inputTitle").prop( "disabled", true );
+		$("#inputURL").prop( "disabled", true );
+		$("#inputPW").prop( "disabled", true );
+	
+		var requestData = {
+			insertZone: document.getElementById("inputPW").value,
+			title: document.getElementById("inputTitle").value,
+			url: document.getElementById("inputURL").value
+		};
+
+		$.ajax({
+			url: "server.php",
+			type: "post",
+			data: requestData,
+			dataType: "json",
+			success: function(response, status, http) {
+
+				$("#inputTitle").prop( "disabled", false );
+				$("#inputURL").prop( "disabled", false );
+				$("#inputPW").prop( "disabled", false );
+				$("#inputTitle").val("");
+				$("#inputURL").val("");
+				$("#inputPW").val("");
+			}
+		});
+    }
+	
+	function buttonDeleteClick(){
+	
+		$("#inputTitle").prop( "disabled", true );
+		$("#inputURL").prop( "disabled", true );
+		$("#inputPW").prop( "disabled", true );
+	
+		var requestData = {
+			deleteZone: document.getElementById("inputPW").value,
+			title: document.getElementById("inputTitle").value,
+			url: document.getElementById("inputURL").value
+		};
+
+		$.ajax({
+			url: "server.php",
+			type: "post",
+			data: requestData,
+			dataType: "json",
+			success: function(response, status, http) {
+
+				$("#inputTitle").prop( "disabled", false );
+				$("#inputURL").prop( "disabled", false );
+				$("#inputPW").prop( "disabled", false );
+				$("#inputTitle").val("");
+				$("#inputURL").val("");
+				$("#inputPW").val("");
+			}
+		});
+    }
+	
+
+</script>
+
+</body>
+
+</html>
